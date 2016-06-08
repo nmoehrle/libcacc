@@ -15,7 +15,7 @@
 CACC_NAMESPACE_BEGIN
 
 template <typename T, int N> class Vector;
-template <typename T, int N> __forceinline__ __device__
+template <typename T, int N> __forceinline__ __host__ __device__
 float norm(Vector<T, N> const &);
 
 template <typename T, int N>
@@ -26,7 +26,7 @@ public:
     __forceinline__ __host__ __device__
     Vector() {}
 
-    __forceinline__ __device__
+    __forceinline__ __host__ __device__
     Vector(float value) {
         #pragma unroll
         for (int i = 0; i < N; ++i) {
@@ -34,20 +34,20 @@ public:
         }
     }
 
-    __forceinline__ __device__
+    __forceinline__ __host__ __device__
     Vector(float x, float y) {
         v[0] = x;
         v[1] = y;
     }
 
-    __forceinline__ __device__
+    __forceinline__ __host__ __device__
     Vector(float x, float y, float z) {
         v[0] = x;
         v[1] = y;
         v[2] = z;
     }
 
-    __forceinline__ __device__
+    __forceinline__ __host__ __device__
     Vector(float x, float y, float z, float w) {
         v[0] = x;
         v[1] = y;
@@ -84,7 +84,7 @@ public:
         return *this;
     }
 
-    __forceinline__ __device__
+    __forceinline__ __host__ __device__
     Vector operator- (void) const {
         Vector ret;
         #pragma unroll
@@ -94,7 +94,7 @@ public:
         return ret;
     }
 
-    __forceinline__ __device__
+    __forceinline__ __host__ __device__
     Vector operator* (float const & rhs) const{
         Vector ret;
         #pragma unroll
@@ -104,7 +104,7 @@ public:
         return ret;
     }
 
-    __forceinline__ __device__
+    __forceinline__ __host__ __device__
     Vector operator/ (float const & rhs) const {
         Vector ret;
         #pragma unroll
@@ -114,7 +114,7 @@ public:
         return ret;
     }
 
-    __forceinline__ __device__
+    __forceinline__ __host__ __device__
     Vector operator+ (Vector const & rhs) const{
         Vector ret;
         #pragma unroll
@@ -124,7 +124,7 @@ public:
         return ret;
     }
 
-    __forceinline__ __device__
+    __forceinline__ __host__ __device__
     Vector operator- (Vector const & rhs) const{
         Vector ret;
         #pragma unroll
@@ -134,7 +134,7 @@ public:
         return ret;
     }
 
-    __forceinline__ __device__
+    __forceinline__ __host__ __device__
     Vector normalize() {
         return *this / norm(*this);
     }
@@ -146,7 +146,7 @@ typedef Vector<Float2, 2> Vec2f;
 
 
 template<typename T, int N>
-__forceinline__ __device__
+__forceinline__ __host__ __device__
 Vector<T, N> operator * (float lhs, Vector<T, N> const & rhs) {
     Vector<T, N> ret;
     #pragma unroll
@@ -157,7 +157,7 @@ Vector<T, N> operator * (float lhs, Vector<T, N> const & rhs) {
 }
 
 template<typename T, int N>
-__forceinline__ __device__
+__forceinline__ __host__ __device__
 Vector<T, N> operator / (float lhs, Vector<T, N> const & rhs) {
     Vector<T, N> ret;
     #pragma unroll
@@ -168,7 +168,7 @@ Vector<T, N> operator / (float lhs, Vector<T, N> const & rhs) {
 }
 
 template<typename T, int N>
-__forceinline__ __device__
+__forceinline__ __host__ __device__
 float dot(Vector<T, N> const & lhs, Vector<T, N> const & rhs) {
     float ret = 0.0f;
     #pragma unroll
@@ -179,7 +179,7 @@ float dot(Vector<T, N> const & lhs, Vector<T, N> const & rhs) {
 }
 
 template<typename T, int N>
-__forceinline__ __device__
+__forceinline__ __host__ __device__
 float square_norm(Vector<T, N> const & vec) {
     float ret = 0.0f;
     #pragma unroll
@@ -190,12 +190,12 @@ float square_norm(Vector<T, N> const & vec) {
 }
 
 template<typename T, int N>
-__forceinline__ __device__
+__forceinline__ __host__ __device__
 float norm(Vector<T, N> const & vec) {
     return sqrt(square_norm(vec));
 }
 
-__forceinline__ __device__
+__forceinline__ __host__ __device__
 Vec3f cross(Vec3f const & lhs, Vec3f const & rhs) {
     Vec3f ret;
     ret[0] = lhs[1] * rhs[2] - lhs[2] * rhs[1];
