@@ -24,6 +24,15 @@ public:
     Matrix() {}
 
     __forceinline__ __host__ __device__
+    Matrix(float value) {
+        for (int i = 0; i < M; ++i) {
+            #pragma unroll
+            for (int j = 0; j < N; ++j) {
+                v[i][j] = value;
+            }
+        }
+    }
+    __forceinline__ __host__ __device__
     Matrix(float const * values) {
         for (int i = 0; i < M; ++i) {
             #pragma unroll
@@ -70,10 +79,22 @@ public:
         }
         return ret;
     }
+
+    __forceinline__ __host__ __device__
+    Matrix & operator/= (float const & rhs) {
+        for (int i = 0; i < M; ++i) {
+            #pragma unroll
+            for (int j = 0; j < N; ++j) {
+                v[i][j] /= rhs;
+            }
+        }
+        return *this;
+    }
 };
 
-typedef Matrix<Float4, 4, 4> Mat4f;
+typedef Matrix<Float2, 2, 2> Mat2f;
 typedef Matrix<Float4, 3, 3> Mat3f;
+typedef Matrix<Float4, 4, 4> Mat4f;
 
 template<typename T, int N, int M>
 __forceinline__ __device__
@@ -105,6 +126,26 @@ Vector<T, N> mult (Matrix<T, N, N> const & m, Vector<T, N> const & v) {
         ret[i] = sum;
     }
     return ret;
+}
+
+template<typename T, int N>
+__forceinline__ __device__
+float det(Matrix<T, N, N> const & m);
+
+template<typename T, int N>
+__forceinline__ __device__
+float trace(Matrix<T, N, N> const & m);
+
+template<>
+__forceinline__ __device__
+float det(Matrix<Float2, 2, 2> const & m) {
+    return m[0][0] * m[1][1] - m[0][1] * m[1][0];
+}
+
+template<>
+__forceinline__ __device__
+float trace(Matrix<Float2, 2, 2> const & m) {
+    return m[0][0] + m[1][1];
 }
 
 CACC_NAMESPACE_END

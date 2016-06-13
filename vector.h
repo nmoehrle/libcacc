@@ -115,13 +115,31 @@ public:
     }
 
     __forceinline__ __host__ __device__
-    Vector operator+ (Vector const & rhs) const{
+    Vector & operator/= (float const & rhs) {
+        #pragma unroll
+        for (int i = 0; i < N; ++i) {
+            v[i] /= rhs;
+        }
+        return *this;
+    }
+
+    __forceinline__ __host__ __device__
+    Vector operator+ (Vector const & rhs) const {
         Vector ret;
         #pragma unroll
         for (int i = 0; i < N; ++i) {
             ret[i] = v[i] + rhs[i];
         }
         return ret;
+    }
+
+    __forceinline__ __host__ __device__
+    Vector & operator+= (Vector const & rhs) {
+        #pragma unroll
+        for (int i = 0; i < N; ++i) {
+            v[i] += rhs[i];
+        }
+        return *this;
     }
 
     __forceinline__ __host__ __device__
