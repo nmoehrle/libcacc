@@ -26,12 +26,13 @@ tracing::bind_textures(dtree.cdata());
 
 Per default parts of the traversal stack are cached in shared memory. Be sure
 to reduce the block size or short stack size
-([tracing.h](https://github.com/nmoehrle/libcacc/blob/master/tracing.h)
-`SSTACK_SIZE`) if you want to use shared memory within your kernel.
+(`SSTACK_SIZE` in
+[tracing.h](https://github.com/nmoehrle/libcacc/blob/master/tracing.h))
+if you want to use shared memory within your kernel.
 
 For very large trees one might have to increase the overall stack size
-([tracing.h](https://github.com/nmoehrle/libcacc/blob/master/tracing.h)
-`GSTACK_SIZE` + `SSTACK_SIZE`)
+(`GSTACK_SIZE + SSTACK_SIZE` in
+[tracing.h](https://github.com/nmoehrle/libcacc/blob/master/tracing.h))
 
 Requirements
 -------------------------------------------------------------------------------
