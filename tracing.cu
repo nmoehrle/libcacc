@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2015, Nils Moehrle
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD 3-Clause license. See the LICENSE.txt file for details.
+ */
+
 #include "tracing.h"
 
 #include "primitives.h"
@@ -10,7 +18,7 @@ CACC_NAMESPACE_BEGIN
 
 TRACING_NAMESPACE_BEGIN
 
-void load_textures(BVHTree<DEVICE>::Data const bvh_tree) {
+void bind_textures(BVHTree<DEVICE>::Data const bvh_tree) {
     assert(sizeof(BVHTree<DEVICE>::Node) == sizeof(uint4));
     assert(sizeof(AABB) == 2 * sizeof(float4));
     assert(sizeof(Tri) == 3 * sizeof(float4));
