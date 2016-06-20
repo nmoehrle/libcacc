@@ -3,8 +3,8 @@ libcacc
 This project ports parts of the [libacc](https://github.com/nmoehrle/libacc)
 library to CUDA. While construction of the acceleration structures is out of
 scope, the library provides constructs to upload and use the libacc data
-structures within CUDA. Data structures to handle kernel input and output are
-provided additionally.
+structures within CUDA. Additionaly data structures to handle kernel input and output are
+provided.
 
 Usage
 -------------------------------------------------------------------------------
