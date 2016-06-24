@@ -51,6 +51,7 @@ private:
         if (ptr == nullptr) return;
         if (L == HOST) delete[] ptr;
         if (L == DEVICE) CHECK(cudaFree(ptr));
+        ptr = nullptr;
     }
 
     void cleanup(void) {
@@ -64,10 +65,16 @@ private:
             && data.max_rows == odata.max_rows;
     }
 
-public:
-    VectorArray() {
-        data = {0, 0, nullptr, nullptr, 0};
+    template <Location O>
+    void copy(typename VectorArray<O, T>::Data const & odata, cudaMemcpyKind src_to_dst) {
+        CHECK(cudaMemcpy(data.num_rows_ptr, odata.num_rows_ptr,
+            data.num_cols * sizeof(uint), src_to_dst));
+        CHECK(cudaMemcpy2D(data.data_ptr, data.pitch, odata.data_ptr, odata.pitch,
+            odata.num_cols * sizeof(T), odata.max_rows, src_to_dst));
     }
+
+public:
+    VectorArray() : data ({0, 0, nullptr, nullptr, 0}) {};
 
     VectorArray(uint num_cols, uint max_rows) : VectorArray() {
         init(num_cols, max_rows);
@@ -82,14 +89,6 @@ public:
     template <Location O>
     static Ptr create(typename VectorArray<O, T>::Ptr vector_array) {
         return Ptr(new VectorArray(*vector_array));
-    }
-
-    template <Location O>
-    void copy(typename VectorArray<O, T>::Data const & odata, cudaMemcpyKind src_to_dst) {
-        CHECK(cudaMemcpy(data.num_rows_ptr, odata.num_rows_ptr,
-            data.num_cols * sizeof(uint), src_to_dst));
-        CHECK(cudaMemcpy2D(data.data_ptr, data.pitch, odata.data_ptr, odata.pitch,
-            odata.num_cols * sizeof(T), odata.max_rows, src_to_dst));
     }
 
     template <Location O>

@@ -21,6 +21,9 @@ CACC_NAMESPACE_BEGIN
 template <Location L>
 class PointCloud {
 public:
+    typedef typename std::shared_ptr<PointCloud> Ptr;
+    typedef typename std::shared_ptr<const PointCloud> ConstPtr;
+
     struct Data {
         uint num_vertices;
         Vec3f * vertices_ptr;
@@ -46,6 +49,7 @@ private:
         if (ptr == nullptr) return;
         if (L == HOST) delete[] ptr;
         if (L == DEVICE) CHECK(cudaFree(ptr));
+        ptr = nullptr;
     }
 
     void cleanup(void) {
@@ -58,16 +62,20 @@ private:
         return data.num_vertices == odata.num_vertices;
     }
 
-public:
-    PointCloud() {
-        data = {0, nullptr, nullptr};
+    template <Location O>
+    void copy(typename PointCloud<O>::Data const & odata, cudaMemcpyKind src_to_dst) {
+        CHECK(cudaMemcpy(data.vertices_ptr, odata.vertices_ptr,
+            data.num_vertices * sizeof(Vec3f), src_to_dst));
+        CHECK(cudaMemcpy(data.normals_ptr, odata.normals_ptr,
+            data.num_vertices * sizeof(Vec3f), src_to_dst));
     }
+
+public:
+    PointCloud() : data({0, nullptr, nullptr}) {};
 
     PointCloud(uint num_vertices) : PointCloud() {
         init(num_vertices);
     }
-
-    typedef typename std::shared_ptr<PointCloud> Ptr;
 
     static Ptr create(uint num_vertices) {
         return Ptr(new PointCloud(num_vertices));
@@ -76,14 +84,6 @@ public:
     template <Location O>
     static Ptr create(typename PointCloud<O>::Ptr point_cloud) {
         return Ptr(new PointCloud(*point_cloud));
-    }
-
-    template <Location O>
-    void copy(typename PointCloud<O>::Data const & odata, cudaMemcpyKind src_to_dst) {
-        CHECK(cudaMemcpy(data.vertices_ptr, odata.vertices_ptr,
-            data.num_vertices * sizeof(Vec3f), src_to_dst));
-        CHECK(cudaMemcpy(data.normals_ptr, odata.normals_ptr,
-            data.num_vertices * sizeof(Vec3f), src_to_dst));
     }
 
     template <Location O>

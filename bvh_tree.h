@@ -23,13 +23,12 @@ CACC_NAMESPACE_BEGIN
 
 template <Location L>
 class BVHTree {
-private:
-    typedef cacc::Tri Tri;
-    typedef cacc::AABB AABB;
-
 public:
     typedef std::shared_ptr<BVHTree> Ptr;
     const uint NAI = std::numeric_limits<uint>::max();
+
+    typedef cacc::Tri Tri;
+    typedef cacc::AABB AABB;
 
     #pragma __align__(128)
     struct Node {
@@ -77,6 +76,7 @@ private:
         if (ptr == nullptr) return;
         if (L == HOST) delete[] ptr;
         if (L == DEVICE) CHECK(cudaFree(ptr));
+        ptr = nullptr;
     }
 
     void cleanup(void) {
@@ -90,6 +90,18 @@ private:
     bool meta_equal(Data data, typename BVHTree<O>::Data odata) {
         return data.num_nodes == odata.num_nodes
             && data.num_faces == odata.num_faces;
+    }
+
+    template <Location O>
+    void copy(typename BVHTree<O>::Data const & odata, cudaMemcpyKind src_to_dst) {
+        CHECK(cudaMemcpy(data.nodes_ptr, odata.nodes_ptr,
+            data.num_nodes * sizeof(Node), src_to_dst));
+        CHECK(cudaMemcpy(data.aabbs_ptr, odata.aabbs_ptr,
+            data.num_nodes * sizeof(AABB), src_to_dst));
+        CHECK(cudaMemcpy(data.tris_ptr, odata.tris_ptr,
+            data.num_faces * sizeof(Tri), src_to_dst));
+        CHECK(cudaMemcpy(data.indices_ptr, odata.indices_ptr,
+            data.num_faces * sizeof(uint), src_to_dst));
     }
 
     BVHTree() {
@@ -109,18 +121,6 @@ public:
 
     template<typename IdxType, typename Vec3fType>
     BVHTree(typename acc::BVHTree<IdxType, Vec3fType> const & bvh_tree);
-
-    template <Location O>
-    void copy(typename BVHTree<O>::Data const & odata, cudaMemcpyKind src_to_dst) {
-        CHECK(cudaMemcpy(data.nodes_ptr, odata.nodes_ptr,
-            data.num_nodes * sizeof(Node), src_to_dst));
-        CHECK(cudaMemcpy(data.aabbs_ptr, odata.aabbs_ptr,
-            data.num_nodes * sizeof(AABB), src_to_dst));
-        CHECK(cudaMemcpy(data.tris_ptr, odata.tris_ptr,
-            data.num_faces * sizeof(Tri), src_to_dst));
-        CHECK(cudaMemcpy(data.indices_ptr, odata.indices_ptr,
-            data.num_faces * sizeof(uint), src_to_dst));
-    }
 
     template <Location O>
     BVHTree& operator=(BVHTree<O> const & other) {
