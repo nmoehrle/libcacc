@@ -73,9 +73,9 @@ public:
         return std::make_shared<Image>();
     }
 
-    template<typename O>
+    template <Location O>
     static Image::Ptr create(typename Image<T, O>::Ptr image) {
-        return std::make_shared<Image<T, L> >(image);
+        return std::make_shared<Image>(image);
     }
 
     template <Location O>
