@@ -19,9 +19,9 @@ CACC_NAMESPACE_BEGIN
 TRACING_NAMESPACE_BEGIN
 
 void bind_textures(BVHTree<DEVICE>::Data const bvh_tree) {
-    assert(sizeof(BVHTree<DEVICE>::Node) == sizeof(uint4));
-    assert(sizeof(AABB) == 2 * sizeof(float4));
-    assert(sizeof(Tri) == 3 * sizeof(float4));
+    static_assert(sizeof(BVHTree<DEVICE>::Node) == sizeof(uint4), "");
+    static_assert(sizeof(AABB) == 2 * sizeof(float4), "");
+    static_assert(sizeof(Tri) == 3 * sizeof(float4), "");
     CHECK(cudaBindTexture(NULL, nodes, bvh_tree.nodes_ptr,
         bvh_tree.num_nodes * sizeof(BVHTree<DEVICE>::Node)));
     CHECK(cudaBindTexture(NULL, aabbs, bvh_tree.aabbs_ptr,

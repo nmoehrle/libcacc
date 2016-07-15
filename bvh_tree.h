@@ -30,7 +30,7 @@ public:
     typedef cacc::Tri Tri;
     typedef cacc::AABB AABB;
 
-    #pragma __align__(128)
+    #pragma __align__(64)
     struct Node {
         union {
             struct {
@@ -113,7 +113,7 @@ private:
     }
 
 public:
-    template<typename IdxType, typename Vec3fType>
+    template <typename IdxType, typename Vec3fType>
     static
     Ptr create(typename acc::BVHTree<IdxType, Vec3fType>::ConstPtr bvh_tree) {
         return Ptr(new BVHTree(*bvh_tree));

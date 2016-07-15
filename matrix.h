@@ -81,6 +81,18 @@ public:
     }
 
     __forceinline__ __host__ __device__
+    Matrix operator/ (float const & rhs) {
+        Matrix ret;
+        for (int i = 0; i < M; ++i) {
+            #pragma unroll
+            for (int j = 0; j < N; ++j) {
+                ret[i][j] = v[i][j] / rhs;
+            }
+        }
+        return ret;
+    }
+
+    __forceinline__ __host__ __device__
     Matrix & operator/= (float const & rhs) {
         for (int i = 0; i < M; ++i) {
             #pragma unroll
