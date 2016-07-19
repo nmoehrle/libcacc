@@ -28,7 +28,7 @@ constexpr uint NAI = (uint) -1;
 void bind_textures(cacc::BVHTree<cacc::DEVICE>::Data const bvh_tree);
 
 __device__
-void trace(cacc::BVHTree<cacc::DEVICE>::Data const bvh_tree,
+bool trace(cacc::BVHTree<cacc::DEVICE>::Data const bvh_tree,
         cacc::Ray const ray, uint * hit_face_id_ptr);
 
 TRACING_NAMESPACE_END

@@ -26,31 +26,31 @@ print_cuda_devices(void) {
     for (int i = 0; i < count; ++i) {
         cudaDeviceProp prop;
         CHECK(cudaGetDeviceProperties(&prop, i));
-        std::cout << std::string(TERM_WIDTH, '-') << std::endl;    
-        std::cout << "Device:\t" << prop.name << std::endl; 
+        std::cout << std::string(TERM_WIDTH, '-') << std::endl;
+        std::cout << "Device:\t" << prop.name << std::endl;
         std::cout << std::string(TERM_WIDTH, '-') << std::endl;
         std::cout << "\tCompute Capability:\t" << prop.major <<
-            "." << prop.minor << std::endl 
+            "." << prop.minor << std::endl
             << "\tMultiprocessor Count:\t"
-            << prop.multiProcessorCount << std::endl 
+            << prop.multiProcessorCount << std::endl
             << "\tGPU Clock Rate:\t\t"
-            << prop.clockRate / 1000 << " Mhz" << std::endl 
+            << prop.clockRate / 1000 << " Mhz" << std::endl
             << "\tTotal Global Memory:\t"
-            << prop.totalGlobalMem / (2 << 20) << " MB" << std::endl 
+            << prop.totalGlobalMem / (2 << 20) << " MB" << std::endl
             << "\tL2 Cache Size:\t\t"
-            << prop.l2CacheSize / (2 << 10) << " KB" << std::endl 
+            << prop.l2CacheSize / (2 << 10) << " KB" << std::endl
             << "\tMax Block Size:\t\t"
             << prop.maxThreadsDim[0] << "x"
             << prop.maxThreadsDim[1] << "x"
             << prop.maxThreadsDim[2] << std::endl
             << "\tMax Threads Per Block:\t"
-            << prop.maxThreadsPerBlock << std::endl 
+            << prop.maxThreadsPerBlock << std::endl
             << "\tShared Memory Size:\t"
-            << prop.sharedMemPerBlock / (2 << 10) << " KB" << std::endl; 
+            << prop.sharedMemPerBlock / (2 << 10) << " KB" << std::endl;
     }
     std::cout << std::string(TERM_WIDTH, '=') << std::endl;
 }
-    
+
 int
 select_cuda_device(int major, int minor) {
     int device;

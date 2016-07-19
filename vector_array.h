@@ -17,7 +17,7 @@
 
 CACC_NAMESPACE_BEGIN
 
-template <Location L, typename T>
+template <typename T, Location L>
 class VectorArray {
 public:
     struct Data {
@@ -60,15 +60,15 @@ private:
     }
 
     template <Location O>
-    bool meta_equal(Data data, typename VectorArray<O, T>::Data odata) {
+    bool meta_equal(Data data, typename VectorArray<T, O>::Data odata) {
         return data.num_cols == odata.num_cols
             && data.max_rows == odata.max_rows;
     }
 
     template <Location O>
-    void copy(typename VectorArray<O, T>::Data const & odata, cudaMemcpyKind src_to_dst) {
+    void copy(typename VectorArray<T, O>::Data const & odata, cudaMemcpyKind src_to_dst) {
         CHECK(cudaMemcpy(data.num_rows_ptr, odata.num_rows_ptr,
-            data.num_cols * sizeof(uint), src_to_dst));
+            odata.num_cols * sizeof(uint), src_to_dst));
         CHECK(cudaMemcpy2D(data.data_ptr, data.pitch, odata.data_ptr, odata.pitch,
             odata.num_cols * sizeof(T), odata.max_rows, src_to_dst));
     }
@@ -83,17 +83,17 @@ public:
     typedef typename std::shared_ptr<VectorArray> Ptr;
 
     static Ptr create(uint num_cols, uint max_rows) {
-        return Ptr(new VectorArray(num_cols, max_rows));
+        return std::make_shared<VectorArray>(num_cols, max_rows);
     }
 
     template <Location O>
-    static Ptr create(typename VectorArray<O, T>::Ptr vector_array) {
-        return Ptr(new VectorArray(*vector_array));
+    static Ptr create(typename VectorArray<T, O>::Ptr vector_array) {
+        return std::make_shared<VectorArray>(*vector_array);
     }
 
     template <Location O>
-    VectorArray& operator=(VectorArray<O, T> const & other) {
-        typename VectorArray<O, T>::Data const & odata = other.cdata();
+    VectorArray& operator=(VectorArray<T, O> const & other) {
+        typename VectorArray<T, O>::Data const & odata = other.cdata();
         if (!meta_equal<O>(data, odata)) {
             cleanup();
             init(odata.num_cols, odata.max_rows);
@@ -108,7 +108,7 @@ public:
     }
 
     template<Location O>
-    VectorArray(VectorArray<O, T> const & other) : VectorArray() {
+    VectorArray(VectorArray<T, O> const & other) : VectorArray() {
         *this = other;
     }
 

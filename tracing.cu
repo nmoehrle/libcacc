@@ -10,9 +10,9 @@
 
 #include "primitives.h"
 
-texture<uint4, 1> nodes;
-texture<float4, 1> aabbs;
-texture<float4, 1> tris;
+static texture<uint4, 1> nodes;
+static texture<float4, 1> aabbs;
+static texture<float4, 1> tris;
 
 CACC_NAMESPACE_BEGIN
 
@@ -60,14 +60,14 @@ Tri load_tri(uint idx) {
 }
 
 __device__
-void trace(BVHTree<DEVICE>::Data const bvh_tree,
+bool trace(BVHTree<DEVICE>::Data const bvh_tree,
         Ray const ray, uint * hit_face_id_ptr) {
     const int tx = threadIdx.x;
 
     float t = inf;
     uint hit_face_id = NAI;
     uint gstack[GSTACK_SIZE];
-    uint __shared__ sstack[SSTACK_SIZE * TRACE_BLOCK_SIZE];
+    uint __shared__ sstack[SSTACK_SIZE * TRACING_BLOCK_SIZE];
     uint node_idx = 0;
 
     int stack_idx = -1;
@@ -114,7 +114,10 @@ void trace(BVHTree<DEVICE>::Data const bvh_tree,
             else node_idx = gstack[stack_idx--];
         }
     }
+
     *hit_face_id_ptr = hit_face_id;
+
+    return hit_face_id != NAI;
 }
 
 TRACING_NAMESPACE_END
