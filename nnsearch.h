@@ -25,14 +25,13 @@ NNSEARCH_NAMESPACE_BEGIN
 
 constexpr uint NAI = (uint) -1;
 
-template <uint K>
-void bind_textures(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree);
+void bind_textures(typename cacc::KDTree<3u, cacc::DEVICE>::Data const kd_tree);
 
 template <uint K>
 __device__
-void find_nns(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
+uint find_nns(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
     typename cacc::KDTree<K, cacc::DEVICE>::Vertex vertex,
-    uint * idxs_ptr, float * dists, uint * n_ptr, uint const stride = 1u);
+    uint * idxs_ptr, float * dists, uint n, uint const stride = 1u);
 
 NNSEARCH_NAMESPACE_END
 

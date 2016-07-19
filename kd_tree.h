@@ -62,7 +62,7 @@ private:
             data.verts_ptr = new Vertex[num_verts];
         } else {
             CHECK(cudaMalloc(&data.nodes_ptr, num_nodes * sizeof(Node)));
-            CHECK(cudaMalloc(&data.verts_ptr, num_nodes * sizeof(Vertex)));
+            CHECK(cudaMalloc(&data.verts_ptr, num_verts * sizeof(Vertex)));
         }
     }
 

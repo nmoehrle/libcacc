@@ -8,47 +8,33 @@
 
 #include "nnsearch.h"
 
-texture<uint4, 1> nodes;
-texture<float2, 1> verts_2d;
-texture<float4, 1> verts_4d;
+static texture<uint4, 1> nodes;
+static texture<float4, 1> verts;
 
 CACC_NAMESPACE_BEGIN
 
 NNSEARCH_NAMESPACE_BEGIN
 
-template <uint K>
-void bind_textures(typename KDTree<K, DEVICE>::Data const kd_tree) {
-    static_assert(sizeof(KDTree<K, DEVICE>::Node) == sizeof(uint4), "");
+void bind_textures(typename KDTree<3u, DEVICE>::Data const kd_tree) {
+    static_assert(sizeof(KDTree<3u, DEVICE>::Node) == sizeof(uint4), "");
     CHECK(cudaBindTexture(NULL, nodes, kd_tree.nodes_ptr,
-        kd_tree.num_nodes * sizeof(KDTree<K, DEVICE>::Node)));
-    if (K <= 2) {
-        static_assert(sizeof(KDTree<K, DEVICE>::Vertex) == sizeof(float2), "");
-        CHECK(cudaBindTexture(NULL, verts_2d, kd_tree.verts_ptr,
-            kd_tree.num_verts * sizeof(float2)));
-    } else {
-        static_assert(sizeof(KDTree<K, DEVICE>::Vertex) == sizeof(float4), "");
-        CHECK(cudaBindTexture(NULL, verts_4d, kd_tree.verts_ptr,
-            kd_tree.num_verts * sizeof(float4)));
-    }
+        kd_tree.num_nodes * sizeof(KDTree<3u, DEVICE>::Node)));
+    static_assert(sizeof(KDTree<3u, DEVICE>::Vertex) == sizeof(float4), "");
+    CHECK(cudaBindTexture(NULL, verts, kd_tree.verts_ptr,
+        kd_tree.num_verts * sizeof(float4)));
 }
 
-template <uint K>
 __device__ __forceinline__
-typename KDTree<K, DEVICE>::Node load_node(uint idx) {
-    typename KDTree<K, DEVICE>::Node node;
+typename KDTree<3u, DEVICE>::Node load_node(uint idx) {
+    typename KDTree<3u, DEVICE>::Node node;
     node.rldv = tex1Dfetch(nodes, idx);
     return node;
 }
 
-template <uint K>
 __device__ __forceinline__
-typename KDTree<K, DEVICE>::Vertex load_vertex(uint idx) {
-    typename KDTree<K, DEVICE>::Vertex vertex;
-    if (K <= 2) {
-        vertex = tex1Dfetch(verts_2d, idx);
-    } else {
-        vertex = tex1Dfetch(verts_4d, idx);
-    }
+typename KDTree<3u, DEVICE>::Vertex load_vertex(uint idx) {
+    float4 v = tex1Dfetch(verts, idx);
+    typename KDTree<3u, DEVICE>::Vertex vertex(v.x, v.y, v.z);
     return vertex;
 }
 
@@ -82,17 +68,24 @@ max_value(float const * values, uint n, uint const stride)
     return max;
 }
 
+template
+__device__
+uint find_nns<3u>(cacc::KDTree<3u, cacc::DEVICE>::Data const kd_tree,
+    cacc::KDTree<3u, cacc::DEVICE>::Vertex vertex,
+    uint * idxs_ptr, float * dists, uint n, uint const stride);
+
+constexpr float inf = std::numeric_limits<float>::infinity();
+
 template <uint K>
 __device__
-void find_nns(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
+uint find_nns(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
     typename cacc::KDTree<K, cacc::DEVICE>::Vertex vertex,
-    uint * idxs_ptr, float * dists_ptr, uint * n_ptr, uint const stride)
+    uint * idxs_ptr, float * dists_ptr, uint k, uint const stride)
 {
     const int tx = threadIdx.x;
 
     uint n = 0;
-    uint k = *n_ptr;
-    float max_dist = std::numeric_limits<float>::infinity();
+    float max_dist = inf;
     uint node_idx = 0;
     bool down = true;
     uint gstack[GSTACK_SIZE];
@@ -100,58 +93,55 @@ void find_nns(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
 
     int stack_idx = -1;
     while (true) {
-        typename KDTree<K, DEVICE>::Node node = load_node<K>(node_idx);
-        typename KDTree<K, DEVICE>::Vertex vert = load_vertex<K>(node.vid);
+        typename KDTree<K, DEVICE>::Node node = load_node(node_idx);
+        typename KDTree<K, DEVICE>::Vertex vert = load_vertex(node.vid);
 
         float diff = vertex[node.dim] - vert[node.dim];
         if (down) {
-            float dist = norm(vertex, vert);
+            float dist = norm(vertex - vert);
             if (dist < max_dist) {
                 if (n < k) {
-                    idxs_ptr[n] = node.vid;
-                    dists_ptr[n] = node.dist;
+                    idxs_ptr[n * stride] = node.vid;
+                    dists_ptr[n * stride] = dist;
                     n += 1;
                 } else {
                     uint i = max_element(dists_ptr, n, stride);
                     idxs_ptr[i * stride] = node.vid;
                     dists_ptr[i * stride] = dist;
+                }
+
+                if (n == k) {
                     max_dist = max_value(dists_ptr, n, stride);
                 }
             }
 
-            if (node.left == NAI && node.right == NAI) {
-                node_idx = NAI;
-            } else {
+            if (node.left != NAI || node.right != NAI) {
+                /* Inner node - traverse further down. */
                 down = true;
-                uint other;
 
-                if (diff < 0.0f) {
-                    node_idx = node.left;
-                    other = node.right;
-                } else {
-                    node_idx = node.right;
-                    other = node.left;
+                if (node.left != NAI && node.right != NAI) {
+                    if (++stack_idx < SSTACK_SIZE) sstack[SSTACK_SIZE * tx + stack_idx] = node_idx;
+                    else gstack[stack_idx] = node_idx;
                 }
 
-                if (node_idx != NAI) {
-                    if (++stack_idx < SSTACK_SIZE) sstack[SSTACK_SIZE * tx + stack_idx] = other;
-                    else gstack[stack_idx] = other;
+                float diff = vertex[node.dim] - vert[node.dim];
 
-                } else {
-                    node_idx = other;
-                }
+                uint next = (diff < 0.0f) ? node.left : node.right;
+                uint other = (diff < 0.0f) ? node.right : node.left;
+
+                node_idx = (next != NAI) ? next : other;
+            } else {
+                /* Leaf - traverse up and search for next node. */
+                down = false;
+                node_idx = NAI;
             }
         } else {
-            if (std::abs(diff) >= max_dist) {
-                node_idx = NAI;
-            } else {
+            if (std::abs(diff) < max_dist) {
                 down = true;
-
-                if (diff < 0.0f) {
-                    node_idx = node.right;
-                } else {
-                    node_idx = node.left;
-                }
+                node_idx = (diff < 0.0f) ? node.right : node.left;
+            } else {
+                down = false;
+                node_idx = NAI;
             }
         }
 
@@ -159,11 +149,10 @@ void find_nns(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
             if (stack_idx < 0) break;
             if (stack_idx < SSTACK_SIZE) node_idx = sstack[SSTACK_SIZE * tx + stack_idx--];
             else node_idx = gstack[stack_idx--];
-            down = false;
         }
     }
 
-    *n_ptr = n;
+    return n;
 }
 
 NNSEARCH_NAMESPACE_END
