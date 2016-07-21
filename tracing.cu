@@ -61,7 +61,8 @@ Tri load_tri(uint idx) {
 
 __device__
 bool trace(BVHTree<DEVICE>::Data const bvh_tree,
-        Ray const ray, uint * hit_face_id_ptr) {
+    Ray const ray, uint * hit_face_id_ptr)
+{
     const int tx = threadIdx.x;
 
     float t = inf;
@@ -115,7 +116,7 @@ bool trace(BVHTree<DEVICE>::Data const bvh_tree,
         }
     }
 
-    *hit_face_id_ptr = hit_face_id;
+    if (hit_face_id_ptr != nullptr) *hit_face_id_ptr = hit_face_id;
 
     return hit_face_id != NAI;
 }

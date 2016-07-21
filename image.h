@@ -125,6 +125,9 @@ public:
 template <Location L>
 using ByteImage = Image<uint, L>;
 
+template <Location L>
+using FloatImage = Image<float, L>;
+
 CACC_NAMESPACE_END
 
 #endif /* CACC_IMAGE_HEADER */

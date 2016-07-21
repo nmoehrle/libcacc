@@ -29,7 +29,7 @@ void bind_textures(cacc::BVHTree<cacc::DEVICE>::Data const bvh_tree);
 
 __device__
 bool trace(cacc::BVHTree<cacc::DEVICE>::Data const bvh_tree,
-        cacc::Ray const ray, uint * hit_face_id_ptr);
+    cacc::Ray const ray, uint * hit_face_id_ptr = nullptr);
 
 TRACING_NAMESPACE_END
 
