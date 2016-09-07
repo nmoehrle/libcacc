@@ -28,6 +28,7 @@ public:
         uint num_vertices;
         Vec3f * vertices_ptr;
         Vec3f * normals_ptr;
+        float * values_ptr;
     };
 
 private:
@@ -38,9 +39,11 @@ private:
         if (L == HOST) {
             data.vertices_ptr = new Vec3f[num_vertices];
             data.normals_ptr = new Vec3f[num_vertices];
+            data.values_ptr = new float[num_vertices];
         } else {
             CHECK(cudaMalloc(&data.vertices_ptr, num_vertices * sizeof(Vec3f)));
             CHECK(cudaMalloc(&data.normals_ptr, num_vertices * sizeof(Vec3f)));
+            CHECK(cudaMalloc(&data.values_ptr, num_vertices * sizeof(float)));
         }
     }
 
@@ -55,6 +58,7 @@ private:
     void cleanup(void) {
         cleanup(data.vertices_ptr);
         cleanup(data.normals_ptr);
+        cleanup(data.values_ptr);
     }
 
     template <Location O>
@@ -68,10 +72,12 @@ private:
             data.num_vertices * sizeof(Vec3f), src_to_dst));
         CHECK(cudaMemcpy(data.normals_ptr, odata.normals_ptr,
             data.num_vertices * sizeof(Vec3f), src_to_dst));
+        CHECK(cudaMemcpy(data.values_ptr, odata.values_ptr,
+            data.num_vertices * sizeof(float), src_to_dst));
     }
 
 public:
-    PointCloud() : data({0, nullptr, nullptr}) {};
+    PointCloud() : data({0, nullptr, nullptr, nullptr}) {};
 
     PointCloud(uint num_vertices) : PointCloud() {
         init(num_vertices);
