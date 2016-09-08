@@ -105,7 +105,7 @@ private:
     }
 
     BVHTree() {
-        data = {0, 0, nullptr, nullptr, nullptr};
+        data = {0, 0, nullptr, nullptr, nullptr, nullptr};
     }
 
     BVHTree(uint num_nodes, uint num_faces) : BVHTree() {
