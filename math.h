@@ -9,6 +9,8 @@
 #ifndef CACC_MATH_HEADER
 #define CACC_MATH_HEADER
 
+#include <cassert>
+
 #include "defines.h"
 
 CACC_NAMESPACE_BEGIN
@@ -22,17 +24,31 @@ uint divup(uint a, uint b) {
 __forceinline__ __host__ __device__
 uint32_t float_to_uint32(float f)
 {
-    uint32_t v = reinterpret_cast<uint32_t&>(f);
-    uint32_t mask = -int32_t(v >> 31) | 0x80000000;
-    return v ^ mask;
+    typedef union {
+        float f;
+        uint32_t u;
+    } alias;
+
+    assert(sizeof(float) == sizeof(uint32_t));
+
+    alias tmp = {f};
+    uint32_t mask = -int32_t(tmp.u >> 31) | 0x80000000;
+    return tmp.u ^ mask;
 }
 
 __forceinline__ __host__ __device__
-float uint32_to_float(uint32_t v)
+float uint32_to_float(uint32_t u)
 {
-    uint32_t mask = ((v >> 31) - 1) | 0x80000000;
-    uint32_t f = v ^ mask;
-    return reinterpret_cast<float&>(f);
+    typedef union {
+        uint32_t u;
+        float f;
+    } alias;
+
+    assert(sizeof(uint32_t) == sizeof(float));
+
+    uint32_t mask = ((u >> 31) - 1) | 0x80000000;
+    alias tmp = {u ^ mask};
+    return tmp.f;
 }
 
 CACC_NAMESPACE_END
