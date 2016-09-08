@@ -10,6 +10,7 @@
 #define CACC_VECTOR_HEADER
 
 #include "defines.h"
+
 #include "float.h"
 
 CACC_NAMESPACE_BEGIN

@@ -13,8 +13,6 @@
 
 #include "defines.h"
 
-#include <cuda_runtime.h>
-
 CACC_NAMESPACE_BEGIN
 
 template <typename T, Location L>

@@ -11,10 +11,9 @@
 
 #include <memory>
 
-#include "vector.h"
 #include "defines.h"
 
-#include <cuda_runtime.h>
+#include "vector.h"
 
 CACC_NAMESPACE_BEGIN
 

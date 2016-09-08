@@ -10,14 +10,11 @@
 #define CACC_BVHTREE_HEADER
 
 #include "acc/bvh_tree.h"
-#include "vector.h"
-
-#include "primitives.h"
 
 #include "defines.h"
 
-
-#include <cuda_runtime.h>
+#include "vector.h"
+#include "primitives.h"
 
 CACC_NAMESPACE_BEGIN
 

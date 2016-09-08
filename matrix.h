@@ -10,6 +10,7 @@
 #define CACC_MATRIX_HEADER
 
 #include "defines.h"
+
 #include "float.h"
 #include "vector.h"
 

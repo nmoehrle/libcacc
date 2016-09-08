@@ -9,10 +9,10 @@
 #ifndef CACC_RAYS_HEADER
 #define CACC_RAYS_HEADER
 
+#include "defines.h"
+
 #include "primitives.h"
 #include "vector.h"
-
-#include "defines.h"
 
 CACC_NAMESPACE_BEGIN
 

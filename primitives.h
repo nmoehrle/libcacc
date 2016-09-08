@@ -9,11 +9,11 @@
 #ifndef CACC_PRIMITIVES_HEADER
 #define CACC_PRIMITIVES_HEADER
 
-#include <acc/primitives.h>
-
-#include "vector.h"
+#include "acc/primitives.h"
 
 #include "defines.h"
+
+#include "vector.h"
 
 constexpr float inf = std::numeric_limits<float>::infinity();
 constexpr float eps = std::numeric_limits<float>::epsilon();
