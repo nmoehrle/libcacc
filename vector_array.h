@@ -117,7 +117,16 @@ public:
     Data const & cdata(void) const {
         return data;
     }
+
+    void null(void) {
+        if (L == HOST) {
+            memset(data.data_ptr, 0, data.num_cols * data.max_rows * sizeof(T));
+        } else {
+            CHECK(cudaMemset2D(data.data_ptr, data.pitch, 0, data.num_cols * sizeof(T), data.max_rows));
+        }
+    }
 };
+
 
 CACC_NAMESPACE_END
 
