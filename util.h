@@ -64,6 +64,11 @@ select_cuda_device(int major, int minor) {
     return device;
 }
 
+void
+set_cuda_device(int device) {
+    CHECK(cudaSetDevice(device));
+}
+
 CACC_NAMESPACE_END
 
 #endif /* CACC_UTIL_HEADER */
