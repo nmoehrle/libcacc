@@ -88,8 +88,8 @@ uint find_nns(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
     float max_dist = inf;
     uint node_idx = 0;
     bool down = true;
-    uint gstack[GSTACK_SIZE];
-    uint __shared__ sstack[SSTACK_SIZE * NNSEARCH_BLOCK_SIZE];
+    uint gstack[NNSEARCH_GSTACK_SIZE];
+    uint __shared__ sstack[NNSEARCH_SSTACK_SIZE * NNSEARCH_BLOCK_SIZE];
 
     int stack_idx = -1;
     while (true) {
@@ -120,7 +120,7 @@ uint find_nns(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
                 down = true;
 
                 if (node.left != NAI && node.right != NAI) {
-                    if (++stack_idx < SSTACK_SIZE) sstack[SSTACK_SIZE * tx + stack_idx] = node_idx;
+                    if (++stack_idx < NNSEARCH_SSTACK_SIZE) sstack[NNSEARCH_SSTACK_SIZE * stack_idx + tx] = node_idx;
                     else gstack[stack_idx] = node_idx;
                 }
 
@@ -147,7 +147,7 @@ uint find_nns(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
 
         if (node_idx == NAI) {
             if (stack_idx < 0) break;
-            if (stack_idx < SSTACK_SIZE) node_idx = sstack[SSTACK_SIZE * tx + stack_idx--];
+            if (stack_idx < NNSEARCH_SSTACK_SIZE) node_idx = sstack[NNSEARCH_SSTACK_SIZE * stack_idx-- + tx];
             else node_idx = gstack[stack_idx--];
         }
     }

@@ -19,9 +19,15 @@ CACC_NAMESPACE_BEGIN
 TRACING_NAMESPACE_BEGIN
 
 //SSTACK_SIZE * TRACING_BLOCK_SIZE has to be less than smem
-#define TRACING_BLOCK_SIZE 128
-#define SSTACK_SIZE 6
-#define GSTACK_SIZE 64
+#ifndef TRACING_BLOCK_SIZE
+    #define TRACING_BLOCK_SIZE 128
+#endif
+#ifndef TRACING_SSTACK_SIZE
+    #define TRACING_SSTACK_SIZE 6
+#endif
+#ifndef TRACING_GSTACK_SIZE
+    #define TRACING_GSTACK_SIZE 64
+#endif
 
 constexpr uint NAI = (uint) -1;
 

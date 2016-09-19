@@ -18,10 +18,16 @@ CACC_NAMESPACE_BEGIN
 
 NNSEARCH_NAMESPACE_BEGIN
 
-//SSTACK_SIZE * NNSEARCH_BLOCK_SIZE has to be less than smem
-#define NNSEARCH_BLOCK_SIZE 128
-#define SSTACK_SIZE 6
-#define GSTACK_SIZE 64
+//NNSEARCH_SSTACK_SIZE * NNSEARCH_BLOCK_SIZE has to be less than smem
+#ifndef NNSEARCH_BLOCK_SIZE
+    #define NNSEARCH_BLOCK_SIZE 128
+#endif
+#ifndef NNSEARCH_SSTACK_SIZE
+    #define NNSEARCH_SSTACK_SIZE 6
+#endif
+#ifndef NNSEARCH_GSTACK_SIZE
+    #define NNSEARCH_GSTACK_SIZE 64
+#endif
 
 constexpr uint NAI = (uint) -1;
 
