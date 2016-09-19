@@ -10,6 +10,8 @@
 
 #include <iostream>
 
+#include "math/vector.h"
+
 ACC_NAMESPACE_BEGIN
 
 template <> template <>
