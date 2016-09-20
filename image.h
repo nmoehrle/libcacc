@@ -31,13 +31,14 @@ public:
 
 private:
     Data data;
+    cudaStream_t stream;
 
     void init(int width, int height) {
         data.width = width;
         data.height = height;
         if (L == HOST) {
+            CHECK(cudaMallocHost(&data.data_ptr, width * height * sizeof(T)));
             data.pitch = width * sizeof(T);
-            data.data_ptr = new T[width * height];
         } else {
             CHECK(cudaMallocPitch(&data.data_ptr, &data.pitch,
                 width * sizeof(T), height));
@@ -47,7 +48,7 @@ private:
     template <typename P>
     void cleanup(P * ptr) {
         if (ptr == nullptr) return;
-        if (L == HOST) delete[] ptr;
+        if (L == HOST) CHECK(cudaFreeHost(ptr));
         if (L == DEVICE) CHECK(cudaFree(ptr));
         ptr = nullptr;
     }
@@ -63,9 +64,10 @@ private:
     }
 
 public:
-    Image() : data({0, 0, 0, nullptr}) {}
+    Image() : data({0, 0, 0, nullptr}), stream(cudaStreamLegacy) {}
 
-    Image(int width, int height) {
+    Image(int width, int height, cudaStream_t stream = cudaStreamLegacy)
+        : stream(stream) {
         init(width, height);
     }
 
@@ -73,8 +75,8 @@ public:
         return std::make_shared<Image>();
     }
 
-    static Image::Ptr create(int width, int height) {
-        return std::make_shared<Image>(width, height);
+    static Image::Ptr create(int width, int height, cudaStream_t stream = cudaStreamLegacy) {
+        return std::make_shared<Image>(width, height, stream);
     }
 
     template <Location O>
@@ -84,13 +86,15 @@ public:
 
     template <Location O>
     void copy(typename Image<T, O>::Data const & odata, cudaMemcpyKind src_to_dst) {
-        CHECK(cudaMemcpy2D(data.data_ptr, data.pitch, odata.data_ptr, odata.pitch,
-            data.width * sizeof(T), data.height, src_to_dst));
+        CHECK(cudaMemcpy2DAsync(data.data_ptr, data.pitch, odata.data_ptr, odata.pitch,
+            data.width * sizeof(T), data.height, src_to_dst, stream));
     }
 
     template <Location O>
     Image& operator=(Image<T, O> const & other) {
         typename Image<T, O>::Data const & odata = other.cdata();
+        stream = other.current_stream();
+
         if (!meta_equal<O>(data, odata)) {
             cleanup();
             init(odata.width, odata.height);
@@ -113,12 +117,20 @@ public:
         cleanup();
     }
 
+    void sync(void) const {
+        CHECK(cudaStreamSynchronize(stream));
+    }
+
     Image::Data & data_ref(void) {
         return data;
     }
 
     Image::Data const & cdata(void) const {
         return data;
+    }
+
+    cudaStream_t current_stream(void) const {
+        return stream;
     }
 };
 

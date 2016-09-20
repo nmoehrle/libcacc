@@ -28,26 +28,29 @@ public:
 
 private:
     Data data;
+    cudaStream_t stream;
 
     void init(uint num_cols, uint max_rows) {
         data.num_cols = num_cols;
         data.max_rows = max_rows;
 
         if (L == HOST) {
-            data.num_rows_ptr = new uint[num_cols]();
-            data.data_ptr = new T[num_cols * max_rows];
+            CHECK(cudaMallocHost(&data.num_rows_ptr, num_cols * sizeof(uint)));
+            CHECK(cudaMemset(data.num_rows_ptr, 0, num_cols * sizeof(uint)));
+            CHECK(cudaMallocHost(&data.data_ptr, num_cols * max_rows * sizeof(T)));
             data.pitch = num_cols * sizeof(T);
         } else {
             CHECK(cudaMalloc(&data.num_rows_ptr, num_cols * sizeof(uint)));
             CHECK(cudaMemset(data.num_rows_ptr, 0, num_cols * sizeof(uint)));
-            CHECK(cudaMallocPitch(&data.data_ptr, &data.pitch, num_cols * sizeof(T), max_rows));
+            CHECK(cudaMallocPitch(&data.data_ptr, &data.pitch,
+                num_cols * sizeof(T), max_rows));
         }
     }
 
     template <typename P>
     void cleanup(P * ptr) {
         if (ptr == nullptr) return;
-        if (L == HOST) delete[] ptr;
+        if (L == HOST) CHECK(cudaFreeHost(ptr));
         if (L == DEVICE) CHECK(cudaFree(ptr));
         ptr = nullptr;
     }
@@ -65,23 +68,24 @@ private:
 
     template <Location O>
     void copy(typename VectorArray<T, O>::Data const & odata, cudaMemcpyKind src_to_dst) {
-        CHECK(cudaMemcpy(data.num_rows_ptr, odata.num_rows_ptr,
-            odata.num_cols * sizeof(uint), src_to_dst));
-        CHECK(cudaMemcpy2D(data.data_ptr, data.pitch, odata.data_ptr, odata.pitch,
-            odata.num_cols * sizeof(T), odata.max_rows, src_to_dst));
+        CHECK(cudaMemcpyAsync(data.num_rows_ptr, odata.num_rows_ptr,
+            odata.num_cols * sizeof(uint), src_to_dst, stream));
+        CHECK(cudaMemcpy2DAsync(data.data_ptr, data.pitch, odata.data_ptr, odata.pitch,
+            odata.num_cols * sizeof(T), odata.max_rows, src_to_dst, stream));
     }
 
 public:
-    VectorArray() : data ({0, 0, nullptr, nullptr, 0}) {};
+    VectorArray() : data ({0, 0, nullptr, nullptr, 0}), stream(cudaStreamLegacy) {};
 
-    VectorArray(uint num_cols, uint max_rows) : VectorArray() {
+    VectorArray(uint num_cols, uint max_rows, cudaStream_t stream = cudaStreamLegacy)
+        : data ({0, 0, nullptr, nullptr, 0}), stream(stream) {
         init(num_cols, max_rows);
     }
 
     typedef typename std::shared_ptr<VectorArray> Ptr;
 
-    static Ptr create(uint num_cols, uint max_rows) {
-        return std::make_shared<VectorArray>(num_cols, max_rows);
+    static Ptr create(uint num_cols, uint max_rows, cudaStream_t stream = cudaStreamLegacy) {
+        return std::make_shared<VectorArray>(num_cols, max_rows, stream);
     }
 
     template <Location O>
@@ -91,6 +95,8 @@ public:
 
     template <Location O>
     VectorArray& operator=(VectorArray<T, O> const & other) {
+        stream = other.current_stream();
+
         typename VectorArray<T, O>::Data const & odata = other.cdata();
         if (!meta_equal<O>(data, odata)) {
             cleanup();
@@ -118,15 +124,24 @@ public:
         return data;
     }
 
+    cudaStream_t current_stream(void) const {
+        return stream;
+    }
+
+    void sync(void) const {
+        CHECK(cudaStreamSynchronize(stream));
+    }
+
+    void clear(void) {
+        CHECK(cudaMemsetAsync(data.num_rows_ptr, 0,
+            data.num_cols * sizeof(uint), stream));
+    }
+
     void null(void) {
-        if (L == HOST) {
-            memset(data.data_ptr, 0, data.num_cols * data.max_rows * sizeof(T));
-        } else {
-            CHECK(cudaMemset2D(data.data_ptr, data.pitch, 0, data.num_cols * sizeof(T), data.max_rows));
-        }
+        CHECK(cudaMemset2DAsync(data.data_ptr, data.pitch, 0,
+            data.num_cols * sizeof(T), data.max_rows, stream));
     }
 };
-
 
 CACC_NAMESPACE_END
 
