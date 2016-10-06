@@ -93,7 +93,7 @@ bool trace(BVHTree<DEVICE>::Data const bvh_tree,
                     node_idx = node.right;
                 }
                 if (++stack_idx < TRACING_SSTACK_SIZE) sstack[TRACING_BLOCK_SIZE * stack_idx + tx] = other;
-                else gstack[stack_idx] = other;
+                else gstack[stack_idx - TRACING_SSTACK_SIZE] = other;
             } else {
                 if (right) node_idx = node.right;
                 if (left) node_idx = node.left;
@@ -101,7 +101,7 @@ bool trace(BVHTree<DEVICE>::Data const bvh_tree,
             if (!left && !right) {
                 if (stack_idx < 0) break;
                 if (stack_idx < TRACING_SSTACK_SIZE) node_idx = sstack[TRACING_BLOCK_SIZE * stack_idx-- + tx];
-                else node_idx = gstack[stack_idx--];
+                else node_idx = gstack[stack_idx-- - TRACING_SSTACK_SIZE];
             }
         } else {
             for (uint i = node.first; i < node.last; ++i) {
@@ -112,7 +112,7 @@ bool trace(BVHTree<DEVICE>::Data const bvh_tree,
             }
             if (stack_idx < 0) break;
             if (stack_idx < TRACING_SSTACK_SIZE) node_idx = sstack[TRACING_BLOCK_SIZE * stack_idx-- + tx];
-            else node_idx = gstack[stack_idx--];
+            else node_idx = gstack[stack_idx-- - TRACING_SSTACK_SIZE];
         }
     }
 

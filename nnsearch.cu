@@ -38,11 +38,13 @@ typename KDTree<3u, DEVICE>::Vertex load_vertex(uint idx) {
     return vertex;
 }
 
+constexpr float lowest = std::numeric_limits<float>::lowest();
+
 __device__ __forceinline__
 uint
 max_element(float const * values, uint n, uint const stride)
 {
-    float max = 0;
+    float max = lowest;
     uint ret = (uint) -1;
     for (int i = 0; i < n; ++i) {
         float v = values[i * stride];
@@ -58,7 +60,7 @@ __device__ __forceinline__
 float
 max_value(float const * values, uint n, uint const stride)
 {
-    float max = 0;
+    float max = lowest;
     for (int i = 0; i < n; ++i) {
         float v = values[i * stride];
         if (v > max) {
@@ -121,7 +123,7 @@ uint find_nns(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
 
                 if (node.left != NAI && node.right != NAI) {
                     if (++stack_idx < NNSEARCH_SSTACK_SIZE) sstack[NNSEARCH_BLOCK_SIZE * stack_idx + tx] = node_idx;
-                    else gstack[stack_idx] = node_idx;
+                    else gstack[stack_idx - NNSEARCH_SSTACK_SIZE] = node_idx;
                 }
 
                 float diff = vertex[node.dim] - vert[node.dim];
@@ -148,7 +150,7 @@ uint find_nns(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
         if (node_idx == NAI) {
             if (stack_idx < 0) break;
             if (stack_idx < NNSEARCH_SSTACK_SIZE) node_idx = sstack[NNSEARCH_BLOCK_SIZE * stack_idx-- + tx];
-            else node_idx = gstack[stack_idx--];
+            else node_idx = gstack[stack_idx-- - NNSEARCH_SSTACK_SIZE];
         }
     }
 
