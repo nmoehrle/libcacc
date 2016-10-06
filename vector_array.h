@@ -18,6 +18,8 @@ CACC_NAMESPACE_BEGIN
 template <typename T, Location L>
 class VectorArray {
 public:
+    typedef typename std::shared_ptr<VectorArray> Ptr;
+
     struct Data {
         uint num_cols;
         uint max_rows;
@@ -81,8 +83,6 @@ public:
         : data ({0, 0, nullptr, nullptr, 0}), stream(stream) {
         init(num_cols, max_rows);
     }
-
-    typedef typename std::shared_ptr<VectorArray> Ptr;
 
     static Ptr create(uint num_cols, uint max_rows, cudaStream_t stream = cudaStreamLegacy) {
         return std::make_shared<VectorArray>(num_cols, max_rows, stream);
