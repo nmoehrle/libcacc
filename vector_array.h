@@ -108,10 +108,12 @@ public:
         if (L == DEVICE && O == HOST) copy<O>(odata, cudaMemcpyHostToDevice);
         if (L == DEVICE && O == DEVICE) copy<O>(odata, cudaMemcpyDeviceToDevice);
 
+        if (stream == cudaStreamLegacy) sync();
+
         return *this;
     }
 
-    template<Location O>
+    template <Location O>
     VectorArray(VectorArray<T, O> const & other) : VectorArray() {
         *this = other;
     }

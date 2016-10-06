@@ -63,6 +63,12 @@ private:
             && data.height == odata.height;
     }
 
+    template <Location O>
+    void copy(typename Image<T, O>::Data const & odata, cudaMemcpyKind src_to_dst) {
+        CHECK(cudaMemcpy2DAsync(data.data_ptr, data.pitch, odata.data_ptr, odata.pitch,
+            data.width * sizeof(T), data.height, src_to_dst, stream));
+    }
+
 public:
     Image() : data({0, 0, 0, nullptr}), stream(cudaStreamLegacy) {}
 
@@ -85,12 +91,6 @@ public:
     }
 
     template <Location O>
-    void copy(typename Image<T, O>::Data const & odata, cudaMemcpyKind src_to_dst) {
-        CHECK(cudaMemcpy2DAsync(data.data_ptr, data.pitch, odata.data_ptr, odata.pitch,
-            data.width * sizeof(T), data.height, src_to_dst, stream));
-    }
-
-    template <Location O>
     Image& operator=(Image<T, O> const & other) {
         typename Image<T, O>::Data const & odata = other.cdata();
         stream = other.current_stream();
@@ -104,6 +104,8 @@ public:
         if (L == HOST && O == DEVICE) copy<O>(odata, cudaMemcpyDeviceToHost);
         if (L == DEVICE && O == HOST) copy<O>(odata, cudaMemcpyHostToDevice);
         if (L == DEVICE && O == DEVICE) copy<O>(odata, cudaMemcpyDeviceToDevice);
+
+        if (stream == cudaStreamLegacy) sync();
 
         return *this;
     }
