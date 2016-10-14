@@ -70,13 +70,94 @@ max_value(float const * values, uint n, uint const stride)
     return max;
 }
 
+constexpr float inf = std::numeric_limits<float>::infinity();
+
+template
+__device__
+bool find_nn<3u>(typename cacc::KDTree<3u, cacc::DEVICE>::Data const kd_tree,
+    typename cacc::KDTree<3u, cacc::DEVICE>::Vertex vertex,
+    uint * idx_ptr, float * dist_ptr);
+
+template <uint K>
+__device__
+bool find_nn(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
+    typename cacc::KDTree<K, cacc::DEVICE>::Vertex vertex,
+    uint * idx_ptr, float * dist_ptr)
+{
+    const int tx = threadIdx.x;
+
+    uint idx = NAI;
+    float max_dist = inf;
+
+    uint node_idx = 0;
+    bool down = true;
+    uint gstack[NNSEARCH_GSTACK_SIZE];
+    uint __shared__ sstack[NNSEARCH_SSTACK_SIZE * NNSEARCH_BLOCK_SIZE];
+
+    int stack_idx = -1;
+    while (true) {
+        typename KDTree<K, DEVICE>::Node node = load_node(node_idx);
+        typename KDTree<K, DEVICE>::Vertex vert = load_vertex(node.vid);
+
+        float diff = vertex[node.dim] - vert[node.dim];
+        if (down) {
+            float dist = norm(vertex - vert);
+            if (dist < max_dist) {
+                idx = node.vid;
+                max_dist = dist;
+            }
+
+            if (node.left != NAI || node.right != NAI) {
+                /* Inner node - traverse further down. */
+                down = true;
+
+                if (node.left != NAI && node.right != NAI) {
+                    if (++stack_idx < NNSEARCH_SSTACK_SIZE) sstack[NNSEARCH_BLOCK_SIZE * stack_idx + tx] = node_idx;
+                    else gstack[stack_idx - NNSEARCH_SSTACK_SIZE] = node_idx;
+                }
+
+                float diff = vertex[node.dim] - vert[node.dim];
+
+                uint next = (diff < 0.0f) ? node.left : node.right;
+                uint other = (diff < 0.0f) ? node.right : node.left;
+
+                node_idx = (next != NAI) ? next : other;
+            } else {
+                /* Leaf - traverse up and search for next node. */
+                down = false;
+                node_idx = NAI;
+            }
+        } else {
+            if (std::abs(diff) < max_dist) {
+                down = true;
+                node_idx = (diff < 0.0f) ? node.right : node.left;
+            } else {
+                down = false;
+                node_idx = NAI;
+            }
+        }
+
+        if (node_idx == NAI) {
+            if (stack_idx < 0) break;
+            if (stack_idx < NNSEARCH_SSTACK_SIZE) node_idx = sstack[NNSEARCH_BLOCK_SIZE * stack_idx-- + tx];
+            else node_idx = gstack[stack_idx-- - NNSEARCH_SSTACK_SIZE];
+        }
+    }
+
+    if (idx == NAI) return false;
+
+    if (idx_ptr != nullptr) *idx_ptr = idx;
+    if (dist_ptr != nullptr) *dist_ptr = max_dist;
+
+    return true;
+}
+
 template
 __device__
 uint find_nns<3u>(cacc::KDTree<3u, cacc::DEVICE>::Data const kd_tree,
     cacc::KDTree<3u, cacc::DEVICE>::Vertex vertex,
     uint * idxs_ptr, float * dists, uint n, uint const stride);
 
-constexpr float inf = std::numeric_limits<float>::infinity();
 
 template <uint K>
 __device__

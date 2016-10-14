@@ -35,6 +35,12 @@ void bind_textures(typename cacc::KDTree<3u, cacc::DEVICE>::Data const kd_tree);
 
 template <uint K>
 __device__
+bool find_nn(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
+    typename cacc::KDTree<K, cacc::DEVICE>::Vertex vertex,
+    uint * idx_ptr, float * dist);
+
+template <uint K>
+__device__
 uint find_nns(typename cacc::KDTree<K, cacc::DEVICE>::Data const kd_tree,
     typename cacc::KDTree<K, cacc::DEVICE>::Vertex vertex,
     uint * idxs_ptr, float * dists, uint n, uint const stride = 1u);
