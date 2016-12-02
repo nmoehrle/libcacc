@@ -18,6 +18,7 @@ CACC_NAMESPACE_BEGIN
 
 TRACING_NAMESPACE_BEGIN
 
+//WARNING works only with 1D/2D blocks
 //SSTACK_SIZE * TRACING_BLOCK_SIZE has to be less than smem
 #ifndef TRACING_BLOCK_SIZE
     #define TRACING_BLOCK_SIZE 128
@@ -31,11 +32,11 @@ TRACING_NAMESPACE_BEGIN
 
 constexpr uint NAI = (uint) -1;
 
-void bind_textures(cacc::BVHTree<cacc::DEVICE>::Data const bvh_tree);
+void bind_textures(cacc::BVHTree<cacc::DEVICE>::Data const & bvh_tree);
 
 __device__
-bool trace(cacc::BVHTree<cacc::DEVICE>::Data const bvh_tree,
-    cacc::Ray const ray, uint * hit_face_id_ptr = nullptr);
+bool trace(cacc::BVHTree<cacc::DEVICE>::Data const & bvh_tree,
+    cacc::Ray const & ray, uint * hit_face_id_ptr = nullptr);
 
 TRACING_NAMESPACE_END
 
