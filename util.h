@@ -52,20 +52,52 @@ print_cuda_devices(void) {
 }
 
 int
-select_cuda_device(int major, int minor) {
+get_cuda_device(int major, int minor) {
     int device;
     cudaDeviceProp prop;
     prop.major = major;
     prop.minor = minor;
     CHECK(cudaChooseDevice(&device, &prop));
-    CHECK(cudaGetDeviceProperties(&prop, device));
-    std::cout << "Using " << prop.name << " as CUDA device" << std::endl;
+    return device;
+}
+
+int
+get_cuda_devices(int major, int minor, std::vector<int> *devices) {
+    int count;
+    int num_devices = 0;
+    CHECK(cudaGetDeviceCount(&count));
+    for (int i = 0; i < count; ++i) {
+        cudaDeviceProp prop;
+        CHECK(cudaGetDeviceProperties(&prop, i));
+        if (prop.major > major || prop.major == major && prop.minor >= minor) {
+            devices->push_back(i);
+            num_devices += 1;
+        }
+    }
+    return num_devices;
+}
+
+int
+select_cuda_device(int major, int minor) {
+    int device = get_cuda_device(major, minor);
     CHECK(cudaSetDevice(device));
     return device;
 }
 
+std::string
+device_name(int device) {
+    cudaDeviceProp prop;
+    CHECK(cudaGetDeviceProperties(&prop, device));
+    return prop.name;
+}
+
 void
 set_cuda_device(int device) {
+    CHECK(cudaSetDevice(device));
+}
+
+void
+set_cuda_gl_device(int device) {
     CHECK(cudaSetDevice(device));
 }
 
