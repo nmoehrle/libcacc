@@ -42,9 +42,11 @@ public:
 template<typename T>
 class MappedBufferTexture : public BufferTexture<T> {
 private:
-    cudaGraphicsResource_t res;
+    cudaGraphicsResource_t &res;
+    cudaStream_t stream;
 public:
-    MappedBufferTexture(cudaGraphicsResource_t res);
+    MappedBufferTexture(GraphicsResource *resource,
+        cudaStream_t = cudaStreamLegacy);
     ~MappedBufferTexture();
 };
 
@@ -54,7 +56,10 @@ BufferTexture<T>::BufferTexture(T *ptr, size_t size) {
 }
 
 template<typename T>
-MappedBufferTexture<T>::MappedBufferTexture(cudaGraphicsResource_t res) {
+MappedBufferTexture<T>::MappedBufferTexture(GraphicsResource *resource,
+    cudaStream_t steam) : res(resource->ptr()), stream(stream)
+{
+    CHECK(cudaGraphicsMapResources(1, &res, stream));
     T *ptr;
     size_t size;
     CHECK(cudaGraphicsResourceGetMappedPointer((void **)&ptr, &size, res));
@@ -68,7 +73,7 @@ BufferTexture<T>::~BufferTexture() {
 
 template<typename T>
 MappedBufferTexture<T>::~MappedBufferTexture() {
-    CHECK(cudaGraphicsUnmapResources(1, &res));
+    CHECK(cudaGraphicsUnmapResources(1, &res, stream));
 }
 
 template<typename T>
