@@ -22,6 +22,7 @@ cacc::BVHTree<cacc::HOST> BVHTree<unsigned int, math::Vec3f>::convert<cacc::BVHT
     uint num_faces = bvh_tree.tris.size();
     cacc::BVHTree<cacc::HOST> nbvh_tree(num_nodes, num_faces);
     cacc::BVHTree<cacc::HOST>::Data & data = nbvh_tree.data;
+
     for (std::size_t i = 0; i < num_nodes; ++i) {
         cacc::BVHTree<cacc::HOST>::Node & nnode = data.nodes_ptr[i];
         BVHTree<unsigned int, math::Vec3f>::Node const & node = bvh_tree.nodes[i];
@@ -33,6 +34,7 @@ cacc::BVHTree<cacc::HOST> BVHTree<unsigned int, math::Vec3f>::convert<cacc::BVHT
         naabb.min = cacc::Vec3f(*node.aabb.min);
         naabb.max = cacc::Vec3f(*node.aabb.max);
     }
+
     for (std::size_t i = 0; i < num_faces; ++i) {
         data.indices_ptr[i] = bvh_tree.indices[i];
 

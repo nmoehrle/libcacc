@@ -11,6 +11,8 @@
 
 #include "defines.h"
 
+#include "graphics_resource.h"
+
 #include <cuda_runtime_api.h>
 
 CACC_NAMESPACE_BEGIN
@@ -22,8 +24,9 @@ public:
     private:
         cudaTextureObject_t tex;
     public:
+        Accessor(cudaTextureObject_t tex) : tex(tex) {}
         __device__ __forceinline__
-        T operator[](int idx) {
+        T operator[](int idx) const {
             return tex1Dfetch<T>(tex, idx);
         }
     };

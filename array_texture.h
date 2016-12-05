@@ -28,7 +28,7 @@ public:
         __device__ __forceinline__
         YAccessor(cudaTextureObject_t tex, int x) : tex(tex), x(x) {}
         __device__ __forceinline__
-        T operator[](int y) {
+        T operator[](int y) const {
             return tex2D<T>(tex, x, y);
         }
     };
@@ -39,7 +39,7 @@ public:
     public:
         Accessor(cudaTextureObject_t tex) : tex(tex) {}
         __device__ __forceinline__
-        YAccessor operator[](int x) {
+        YAccessor operator[](int x) const {
             return YAccessor(tex, x);
         }
     };
