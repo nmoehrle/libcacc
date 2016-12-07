@@ -21,7 +21,7 @@ CACC_NAMESPACE_BEGIN
 TRACING_NAMESPACE_BEGIN
 
 //WARNING works only with 1D/2D blocks
-//SSTACK_SIZE * TRACING_BLOCK_SIZE has to be less than smem
+//TRACING_SSTACK_SIZE * TRACING_BLOCK_SIZE * sizeof(uint) <! block smem limit
 #ifndef TRACING_BLOCK_SIZE
     #define TRACING_BLOCK_SIZE 128
 #endif

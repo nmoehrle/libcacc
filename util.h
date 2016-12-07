@@ -9,6 +9,8 @@
 #ifndef CACC_UTIL_HEADER
 #define CACC_UTIL_HEADER
 
+#include <chrono>
+#include <thread>
 #include <iostream>
 
 #include "defines.h"
@@ -99,6 +101,17 @@ set_cuda_device(int device) {
 void
 set_cuda_gl_device(int device) {
     CHECK(cudaSetDevice(device));
+}
+
+template <class Rep, class Period>
+void
+sync(cudaStream_t stream, cudaEvent_t event,
+    std::chrono::duration<Rep, Period> sleep = std::chrono::milliseconds(1))
+{
+    CHECK(cudaEventRecord(event, stream));
+    while (cudaEventQuery(event) != cudaSuccess) {
+        std::this_thread::sleep_for(sleep);
+    }
 }
 
 CACC_NAMESPACE_END
