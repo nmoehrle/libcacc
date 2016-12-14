@@ -112,6 +112,7 @@ sync(cudaStream_t stream, cudaEvent_t event,
     while (cudaEventQuery(event) != cudaSuccess) {
         std::this_thread::sleep_for(sleep);
     }
+
 }
 
 CACC_NAMESPACE_END
