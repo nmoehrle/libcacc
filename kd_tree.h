@@ -14,6 +14,7 @@
 #include "defines.h"
 
 #include "vector.h"
+#include "buffer_texture.h"
 
 CACC_NAMESPACE_BEGIN
 
@@ -43,6 +44,27 @@ public:
         };
     };
 
+    struct Accessor {
+        BufferTexture<uint4>::Accessor nodes;
+        uint num_verts;
+        Vertex * verts_ptr;
+
+        __device__ __forceinline__
+        Node load_node(uint idx) const {
+            Node node;
+            node.rldv = nodes[idx];
+            return node;
+        }
+
+        __device__ __forceinline__
+        Vertex load_vertex(uint idx) const {
+            return verts_ptr[idx];
+        }
+    };
+
+    template <uint K2, Location O> friend class KDTree;
+
+private:
     struct Data {
         uint num_nodes;
         uint num_verts;
@@ -50,8 +72,13 @@ public:
         Vertex * verts_ptr;
     };
 
-private:
     Data data;
+
+    struct Textures {
+        BufferTexture<uint4> * nodes;
+    };
+
+    Textures textures;
 
     void init(uint num_nodes, uint num_verts) {
         data.num_nodes = num_nodes;
@@ -63,6 +90,8 @@ private:
             CHECK(cudaMalloc(&data.nodes_ptr, num_nodes * sizeof(Node)));
             CHECK(cudaMalloc(&data.verts_ptr, num_verts * sizeof(Vertex)));
         }
+
+        if (L == DEVICE) initialize_textures();
     }
 
     template <typename T>
@@ -90,6 +119,23 @@ private:
             data.num_nodes * sizeof(Node), src_to_dst));
         CHECK(cudaMemcpy(data.verts_ptr, odata.verts_ptr,
             data.num_verts * sizeof(Vertex), src_to_dst));
+    }
+
+    void initialize_textures(void) {
+        static_assert(sizeof(Node) == sizeof(uint4), "");
+        textures.nodes = new BufferTexture<uint4>(
+            (uint4 *) data.nodes_ptr, data.num_nodes);
+    }
+
+    template <typename T>
+    void cleanup(BufferTexture<T> * ptr) {
+        if (ptr == nullptr) return;
+        delete ptr;
+        ptr = nullptr;
+    }
+
+    void cleanup_textures(void) {
+        cleanup(textures.nodes);
     }
 
     KDTree() {
@@ -139,11 +185,23 @@ public:
         return data;
     }
 
+    Accessor accessor(void) const;
+
     template <unsigned K2, typename IdxType>
     template <class C>
     friend C acc::KDTree<K2, IdxType>::convert(
         acc::KDTree<K2, IdxType> const & kd_tree);
 };
+
+template<> inline
+KDTree<3u, DEVICE>::Accessor
+KDTree<3u, DEVICE>::accessor(void) const {
+    return {
+        textures.nodes->accessor(),
+        data.num_verts,
+        data.verts_ptr
+    };
+}
 
 CACC_NAMESPACE_END
 
