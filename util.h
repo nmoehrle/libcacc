@@ -109,10 +109,10 @@ sync(cudaStream_t stream, cudaEvent_t event,
     std::chrono::duration<Rep, Period> sleep = std::chrono::milliseconds(1))
 {
     CHECK(cudaEventRecord(event, stream));
-    while (cudaEventQuery(event) != cudaSuccess) {
+    while (cudaEventQuery(event) == cudaErrorNotReady) {
         std::this_thread::sleep_for(sleep);
     }
-
+    CHECK(cudaEventQuery(event));
 }
 
 CACC_NAMESPACE_END
