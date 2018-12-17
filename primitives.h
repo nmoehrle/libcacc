@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015, Nils Moehrle, Patrick Seemann
+ * Copyright (C) 2015-2018, Nils Moehrle, Patrick Seemann
  * All rights reserved.
  *
  * This software may be modified and distributed under the terms
